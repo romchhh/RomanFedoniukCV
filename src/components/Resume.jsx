@@ -10,10 +10,10 @@ const content = {
     about:
       'Product Manager із досвідом власного бізнесу та впровадження CRM/ERP-систем. ' +
       'Запустив компанію TeleBots з нуля: від ідеї та першого клієнта — до автономно працюючого бізнесу зі стабільним потоком замовлень. ' +
-      'Маю рідкісне поєднання технічного розуміння (API, боти, Odoo, SQL) і бізнес-мислення: ' +
+      'Думаю, що маю гарне поєднання технічного розуміння (API, боти, Odoo, SQL) і бізнес-мислення: ' +
       'вмію перекласти потреби клієнта у чіткий продукт і довести його до релізу. ' +
       'Досвід роботи з командами розробників, управління проєктами та прямої комунікації зі стейкголдерами на всіх рівнях. ' +
-      'Шукаю сильний продукт, де зможу рости разом з командою, брати відповідальність і приносити вимірювану цінність з першого місяця.',
+      'Шукаю сильний продукт, де зможу рости разом з командою, брати відповідальність і приносити цінність.',
     expLabel: 'Досвід роботи',
     projLabel: 'Проєкти',
     skillsLabel: 'Ключові навички',
@@ -100,7 +100,7 @@ const content = {
     about:
       'Product Manager with hands-on experience founding a tech company and implementing CRM/ERP systems. ' +
       'Built TeleBots from scratch — from idea and first client to an autonomously operating business with a steady order flow. ' +
-      'I bring a rare combination of technical fluency (APIs, bots, Odoo, SQL) and business thinking: ' +
+      'I think I have a good combination of technical fluency (APIs, bots, Odoo, SQL) and business thinking: ' +
       'I can translate client needs into a clear product and take it all the way to release. ' +
       'Experienced working with dev teams, managing projects end-to-end, and communicating directly with stakeholders at all levels. ' +
       'Looking for a strong product where I can grow with the team, own meaningful outcomes, and deliver measurable value from day one.',
