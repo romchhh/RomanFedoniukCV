@@ -31,11 +31,11 @@ import { fullstackContent } from '../content/fullstack';
 const SUPPORTED_LANGS = ['ua', 'en', 'pl'];
 
 const SectionTitle = ({ icon: Icon, children }) => (
-  <h3 className="flex items-center gap-2.5 text-xs sm:text-[13px] font-semibold uppercase tracking-[0.14em] text-gray-500 mb-5 sm:mb-6 pb-3 border-b border-gray-100">
-    <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gray-900 text-white flex-shrink-0">
-      <Icon size={15} strokeWidth={2.2} />
+  <h3 className="section-title flex items-center gap-2 sm:gap-2.5 text-[11px] sm:text-[13px] font-semibold uppercase tracking-[0.12em] sm:tracking-[0.14em] text-gray-500 mb-4 sm:mb-6 pb-2.5 sm:pb-3 border-b border-gray-100">
+    <span className="inline-flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gray-900 text-white flex-shrink-0">
+      <Icon size={14} strokeWidth={2.2} />
     </span>
-    {children}
+    <span className="min-w-0 leading-snug">{children}</span>
   </h3>
 );
 
@@ -43,14 +43,45 @@ const ContactPill = ({ href, icon: Icon, children, external = false }) => (
   <a
     href={href}
     {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-    className="contact-link group inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-[13px] text-gray-600 shadow-sm hover:border-gray-900 hover:text-gray-900 transition-colors"
+    className="contact-link group inline-flex items-center gap-1.5 sm:gap-2 rounded-xl border border-gray-200 bg-white px-2.5 sm:px-3 py-1.5 sm:py-2 text-[12px] sm:text-[13px] text-gray-600 shadow-sm hover:border-gray-900 hover:text-gray-900 transition-colors max-w-full"
   >
-    <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-gray-100 text-gray-700 group-hover:bg-gray-900 group-hover:text-white transition-colors flex-shrink-0">
-      <Icon size={14} strokeWidth={2.1} />
+    <span className="inline-flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-gray-100 text-gray-700 group-hover:bg-gray-900 group-hover:text-white transition-colors flex-shrink-0">
+      <Icon size={13} strokeWidth={2.1} />
     </span>
-    {children}
+    <span className="min-w-0 truncate">{children}</span>
   </a>
 );
+
+const findPageBreak = (canvas, idealY, searchRange = 48) => {
+  if (idealY >= canvas.height) {
+    return canvas.height;
+  }
+
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  const start = Math.max(1, idealY - searchRange);
+  const end = Math.min(canvas.height - 1, idealY + searchRange);
+  let bestY = idealY;
+  let bestScore = -1;
+
+  for (let y = start; y <= end; y += 1) {
+    const row = ctx.getImageData(0, y, canvas.width, 1).data;
+    let white = 0;
+    for (let i = 0; i < row.length; i += 16) {
+      if (row[i] > 248 && row[i + 1] > 248 && row[i + 2] > 248) {
+        white += 1;
+      }
+    }
+    const score = white / (canvas.width / 4);
+    const distancePenalty = Math.abs(y - idealY) / searchRange;
+    const adjusted = score - distancePenalty * 0.15;
+    if (adjusted > bestScore) {
+      bestScore = adjusted;
+      bestY = y;
+    }
+  }
+
+  return bestY;
+};
 
 const RichText = ({ text, className, as: Tag = 'p' }) => {
   const parts = String(text).split(/(\*\*[^*]+\*\*)/g);
@@ -764,8 +795,8 @@ const Resume = ({ role = 'pm' }) => {
       'position:fixed',
       'left:-10000px',
       'top:0',
-      'width:900px',
-      'max-width:900px',
+      'width:820px',
+      'max-width:820px',
       'margin:0',
       'pointer-events:none',
       'z-index:-1',
@@ -775,18 +806,19 @@ const Resume = ({ role = 'pm' }) => {
 
     try {
       await waitForImages(clone);
-      // Let layout settle after desktop PDF styles apply
+      await new Promise((r) => setTimeout(r, 80));
       await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
 
       const canvas = await html2canvas(clone, {
-        scale: 2,
+        scale: 2.2,
         useCORS: true,
         backgroundColor: '#ffffff',
-        width: 900,
-        windowWidth: 900,
+        width: 820,
+        windowWidth: 820,
         scrollX: 0,
         scrollY: 0,
         logging: false,
+        imageTimeout: 15000,
       });
 
       const pdf = new jsPDF({
@@ -798,18 +830,25 @@ const Resume = ({ role = 'pm' }) => {
 
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
-      const margin = 8;
-      const contentWidth = pageWidth - margin * 2;
-      const contentHeight = pageHeight - margin * 2;
-
+      const marginX = 10;
+      const marginY = 10;
+      const contentWidth = pageWidth - marginX * 2;
+      const contentHeight = pageHeight - marginY * 2;
       const pxPerMm = canvas.width / contentWidth;
-      const pageHeightPx = Math.floor(contentHeight * pxPerMm);
+      const idealPageHeightPx = Math.floor(contentHeight * pxPerMm);
 
       let offsetY = 0;
       let pageIndex = 0;
 
-      while (offsetY < canvas.height) {
-        const sliceHeight = Math.min(pageHeightPx, canvas.height - offsetY);
+      while (offsetY < canvas.height - 2) {
+        const remaining = canvas.height - offsetY;
+        const idealEnd = offsetY + idealPageHeightPx;
+        const cutY =
+          remaining <= idealPageHeightPx + 24
+            ? canvas.height
+            : findPageBreak(canvas, Math.min(idealEnd, canvas.height - 1));
+
+        const sliceHeight = Math.max(1, cutY - offsetY);
         const pageCanvas = document.createElement('canvas');
         pageCanvas.width = canvas.width;
         pageCanvas.height = sliceHeight;
@@ -829,16 +868,16 @@ const Resume = ({ role = 'pm' }) => {
           sliceHeight
         );
 
-        const imgData = pageCanvas.toDataURL('image/jpeg', 0.92);
+        const imgData = pageCanvas.toDataURL('image/jpeg', 0.95);
         const sliceHeightMm = sliceHeight / pxPerMm;
 
         if (pageIndex > 0) {
           pdf.addPage();
         }
 
-        pdf.addImage(imgData, 'JPEG', margin, margin, contentWidth, sliceHeightMm);
+        pdf.addImage(imgData, 'JPEG', marginX, marginY, contentWidth, sliceHeightMm);
 
-        offsetY += sliceHeight;
+        offsetY = cutY;
         pageIndex += 1;
       }
 
@@ -865,32 +904,32 @@ const Resume = ({ role = 'pm' }) => {
         <RichText
           key={idx}
           text={paragraph}
-          className={`text-[14px] sm:text-[15px] leading-relaxed text-gray-700 ${idx > 0 ? 'mt-3' : ''}`}
+          className={`text-[13px] sm:text-[15px] leading-relaxed text-gray-700 ${idx > 0 ? 'mt-2.5 sm:mt-3' : ''}`}
         />
       ))}
     </div>
   );
 
   return (
-    <div className="resume-outer min-h-screen bg-gradient-to-b from-gray-100 via-gray-50 to-white px-3 py-4 sm:p-6 md:p-10">
+    <div className="resume-outer min-h-screen bg-gradient-to-b from-gray-100 via-gray-50 to-white px-2 py-3 sm:p-6 md:p-10">
 
       {/* Top bar */}
-      <div className="no-print flex flex-wrap justify-between items-center gap-3 mb-5 sm:mb-7 max-w-6xl mx-auto">
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="resume-toolbar no-print flex flex-wrap justify-between items-center gap-2 sm:gap-3 mb-4 sm:mb-7 max-w-6xl mx-auto">
+        <div className="resume-toolbar-left flex flex-wrap items-center gap-2">
           <Link
             to="/"
-            className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2.5 rounded-xl border border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:border-black hover:text-gray-900 transition-colors shadow-sm"
+            className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:border-black hover:text-gray-900 transition-colors shadow-sm"
           >
             <ArrowLeft size={15} />
             Home
           </Link>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             {SUPPORTED_LANGS.map((l) => (
               <Link
                 key={l}
                 to={`/${activeRole}/${l}`}
-                className={`min-w-[48px] px-4 py-2.5 rounded-xl border text-sm font-semibold transition-all duration-150 text-center ${
+                className={`min-w-[42px] sm:min-w-[48px] px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border text-sm font-semibold transition-all duration-150 text-center ${
                   lang === l
                     ? 'bg-black text-white border-black shadow-sm'
                     : 'bg-white text-black border-gray-300 hover:border-black'
@@ -906,7 +945,7 @@ const Resume = ({ role = 'pm' }) => {
           type="button"
           onClick={handleOpenPdf}
           disabled={pdfLoading}
-          className="flex items-center gap-2 min-h-[44px] px-4 py-2.5 rounded-xl bg-black text-white text-sm font-semibold hover:bg-gray-800 transition-colors disabled:opacity-60 disabled:cursor-wait shadow-sm"
+          className="resume-toolbar-pdf flex items-center gap-2 min-h-[44px] px-4 py-2.5 rounded-xl bg-black text-white text-sm font-semibold hover:bg-gray-800 transition-colors disabled:opacity-60 disabled:cursor-wait shadow-sm"
         >
           <Download size={16} />
           {pdfLoading ? 'PDF…' : t.savePdf}
@@ -920,9 +959,9 @@ const Resume = ({ role = 'pm' }) => {
       >
 
         {/* Header */}
-        <div className="resume-header px-5 sm:px-9 md:px-11 pt-6 sm:pt-9 md:pt-11 pb-6 sm:pb-9 border-b border-gray-100 bg-[linear-gradient(180deg,#ffffff_0%,#fafafa_100%)]">
-          <div className="resume-identity flex items-center sm:items-start gap-4 sm:gap-8 mb-5 sm:mb-6">
-            <div className="resume-photo flex-shrink-0 w-[88px] h-[112px] sm:w-32 sm:h-40 rounded-2xl border border-gray-200 bg-gray-50 shadow-sm overflow-hidden">
+        <div className="resume-header px-4 sm:px-9 md:px-11 pt-5 sm:pt-9 md:pt-11 pb-5 sm:pb-9 border-b border-gray-100 bg-[linear-gradient(180deg,#ffffff_0%,#fafafa_100%)]">
+          <div className="resume-identity flex items-start gap-3.5 sm:gap-8 mb-4 sm:mb-6">
+            <div className="resume-photo flex-shrink-0 w-[76px] h-[98px] sm:w-32 sm:h-40 rounded-xl sm:rounded-2xl border border-gray-200 bg-gray-50 shadow-sm overflow-hidden">
               <img
                 src="/photo.jpg"
                 alt={t.name}
@@ -933,35 +972,38 @@ const Resume = ({ role = 'pm' }) => {
               />
             </div>
 
-            <div className="flex-grow min-w-0 pt-0 sm:pt-1">
-              <div className="inline-flex items-center gap-1.5 text-[11px] sm:text-xs font-semibold uppercase tracking-[0.14em] text-gray-500 mb-2">
-                {activeRole === 'fullstack' ? <Code2 size={13} /> : <User size={13} />}
+            <div className="flex-grow min-w-0 pt-0.5 sm:pt-1">
+              <div className="inline-flex items-center gap-1.5 text-[10px] sm:text-xs font-semibold uppercase tracking-[0.12em] text-gray-500 mb-1.5 sm:mb-2">
+                {activeRole === 'fullstack' ? <Code2 size={12} /> : <User size={12} />}
                 {activeRole === 'fullstack' ? 'Fullstack CV' : 'Product CV'}
               </div>
-              <h1 className="resume-name text-[1.6rem] sm:text-4xl font-bold text-gray-900 mb-1 tracking-tight leading-tight">
+              <h1 className="resume-name text-[1.35rem] sm:text-4xl font-bold text-gray-900 mb-1 tracking-tight leading-[1.15]">
                 {t.name}
               </h1>
-              <p className="resume-title text-[14px] sm:text-lg text-gray-500 font-medium leading-snug">
+              <p className="resume-title text-[13px] sm:text-lg text-gray-500 font-medium leading-snug">
                 {t.title}
               </p>
               <AboutBlock className="about-desktop max-w-3xl mt-5" />
             </div>
           </div>
 
-          <AboutBlock className="about-mobile mb-5" />
+          <AboutBlock className="about-mobile mb-4" />
 
-          <div className="flex flex-wrap gap-2.5 sm:gap-3">
+          <div className="resume-contacts flex flex-wrap gap-2 sm:gap-3">
             <ContactPill href="mailto:roman.fedoniuk@gmail.com" icon={Mail}>
-              roman.fedoniuk@gmail.com
+              <span className="contact-full">roman.fedoniuk@gmail.com</span>
+              <span className="contact-short">Email</span>
             </ContactPill>
             <ContactPill href="https://wa.me/380960908006" icon={Phone} external>
-              +380 96 090 8006
+              <span className="contact-full">+380 96 090 8006</span>
+              <span className="contact-short">Phone</span>
             </ContactPill>
             <ContactPill href="https://t.me/nowayrm" icon={Send} external>
               @nowayrm
             </ContactPill>
             <ContactPill href="https://www.instagram.com/roma_fedoniukk/" icon={Instagram} external>
-              @roma_fedoniukk
+              <span className="contact-full">@roma_fedoniukk</span>
+              <span className="contact-short">IG</span>
             </ContactPill>
             <ContactPill href="https://www.linkedin.com/in/roman-fedoniuk-10a515175/" icon={Linkedin} external>
               <span className="contact-full">linkedin.com/in/roman-fedoniuk-10a515175</span>
@@ -977,7 +1019,7 @@ const Resume = ({ role = 'pm' }) => {
         <div className="resume-body grid grid-cols-1 md:grid-cols-3 md:divide-x divide-gray-100">
 
           {/* Main column */}
-          <div className="resume-main md:col-span-2 px-5 sm:px-9 md:px-11 py-7 sm:py-9 space-y-9 sm:space-y-11 border-b md:border-b-0 border-gray-100">
+          <div className="resume-main md:col-span-2 px-4 sm:px-9 md:px-11 py-6 sm:py-9 space-y-8 sm:space-y-11 border-b md:border-b-0 border-gray-100">
 
             {/* Experience */}
             <section>
@@ -1005,11 +1047,13 @@ const Resume = ({ role = 'pm' }) => {
                         href={job.link}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors mb-3"
+                        className="job-link inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors mb-3 max-w-full"
                       >
-                        <Globe size={14} />
-                        {job.link.replace(/^https?:\/\//, '').replace(/\/$/, '')}
-                        <ExternalLink size={12} />
+                        <Globe size={14} className="flex-shrink-0" />
+                        <span className="truncate">
+                          {job.link.replace(/^https?:\/\//, '').replace(/\/$/, '')}
+                        </span>
+                        <ExternalLink size={12} className="flex-shrink-0" />
                       </a>
                     )}
                     {job.summary && (
@@ -1096,7 +1140,7 @@ const Resume = ({ role = 'pm' }) => {
           </div>
 
           {/* Sidebar */}
-          <div className="resume-aside px-5 sm:px-7 md:px-8 py-7 sm:py-9 space-y-8 sm:space-y-9 bg-[#fbfbfb]">
+          <div className="resume-aside px-4 sm:px-7 md:px-8 py-6 sm:py-9 space-y-7 sm:space-y-9 bg-[#fbfbfb]">
 
             {/* Domains */}
             <section>

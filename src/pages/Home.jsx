@@ -29,11 +29,11 @@ const Home = () => {
     <div className="min-h-screen bg-gradient-to-b from-gray-100 via-gray-50 to-white px-4 py-10 sm:px-6 md:px-10">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-10 sm:mb-14">
-          <div className="mx-auto mb-5 w-28 h-36 sm:w-32 sm:h-40 rounded-2xl overflow-hidden border border-gray-200 shadow-sm bg-gray-50">
+          <div className="home-photo mx-auto mb-5 w-28 h-36 sm:w-32 sm:h-40 rounded-2xl overflow-hidden border border-gray-200 shadow-sm bg-gray-50">
             <img
               src="/photo.jpg"
               alt="Роман Федонюк"
-              className="w-full h-full object-cover object-top"
+              className="w-full h-full object-cover object-[center_18%]"
             />
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight mb-2">
