@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import {
@@ -22,7 +23,10 @@ import {
   Building2,
   CheckCircle2,
   User,
+  Code2,
+  ArrowLeft,
 } from 'lucide-react';
+import { fullstackContent } from '../content/fullstack';
 
 const SectionTitle = ({ icon: Icon, children }) => (
   <h3 className="flex items-center gap-2.5 text-xs sm:text-[13px] font-semibold uppercase tracking-[0.14em] text-gray-500 mb-5 sm:mb-6 pb-3 border-b border-gray-100">
@@ -66,7 +70,7 @@ const RichText = ({ text, className, as: Tag = 'p' }) => {
 const portfolioUrl = (slug, lang) =>
   `https://telebots.site/${lang === 'ua' ? 'uk' : 'en'}/portfolio/${slug}`;
 
-const content = {
+const pmContent = {
   ua: {
     name: 'Роман Федонюк',
     title: 'Product Manager / Project Manager',
@@ -725,11 +729,35 @@ const waitForImages = (root) =>
     )
   );
 
-const Resume = () => {
+const roleMeta = {
+  ua: {
+    pm: 'Product / PM',
+    fullstack: 'Fullstack',
+  },
+  en: {
+    pm: 'Product / PM',
+    fullstack: 'Fullstack',
+  },
+  pl: {
+    pm: 'Product / PM',
+    fullstack: 'Fullstack',
+  },
+};
+
+const contentByRole = {
+  pm: pmContent,
+  fullstack: fullstackContent,
+};
+
+const Resume = ({ role = 'pm' }) => {
   const [lang, setLang] = useState('ua');
   const [pdfLoading, setPdfLoading] = useState(false);
   const resumeRef = useRef(null);
-  const t = content[lang];
+  const activeRole = role === 'fullstack' ? 'fullstack' : 'pm';
+  const t = contentByRole[activeRole][lang];
+  const roles = roleMeta[lang];
+  const otherRole = activeRole === 'pm' ? 'fullstack' : 'pm';
+  const otherPath = otherRole === 'pm' ? '/pm' : '/fullstack';
 
   const handleOpenPdf = async () => {
     if (!resumeRef.current || pdfLoading) {
@@ -824,7 +852,8 @@ const Resume = () => {
         pageIndex += 1;
       }
 
-      const fileName = `Roman_Fedoniuk_CV_${lang}.pdf`;
+      const roleTag = activeRole === 'fullstack' ? 'Fullstack' : 'PM';
+      const fileName = `Roman_Fedoniuk_${roleTag}_CV_${lang}.pdf`;
       const blob = pdf.output('blob');
       const blobUrl = URL.createObjectURL(blob);
       const newTab = window.open(blobUrl, '_blank');
@@ -856,23 +885,42 @@ const Resume = () => {
     <div className="resume-outer min-h-screen bg-gradient-to-b from-gray-100 via-gray-50 to-white px-3 py-4 sm:p-6 md:p-10">
 
       {/* Top bar */}
-      <div className="no-print flex flex-wrap justify-between sm:justify-end items-center gap-2 mb-5 sm:mb-7 max-w-6xl mx-auto">
-        <div className="flex items-center gap-2">
-          {['ua', 'en', 'pl'].map((l) => (
-            <button
-              key={l}
-              type="button"
-              onClick={() => setLang(l)}
-              className={`min-w-[48px] px-4 py-2.5 rounded-xl border text-sm font-semibold transition-all duration-150 ${
-                lang === l
-                  ? 'bg-black text-white border-black shadow-sm'
-                  : 'bg-white text-black border-gray-300 hover:border-black'
-              }`}
-            >
-              {l.toUpperCase()}
-            </button>
-          ))}
+      <div className="no-print flex flex-wrap justify-between items-center gap-3 mb-5 sm:mb-7 max-w-6xl mx-auto">
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2.5 rounded-xl border border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:border-black hover:text-gray-900 transition-colors shadow-sm"
+          >
+            <ArrowLeft size={15} />
+            Home
+          </Link>
+
+          <Link
+            to={otherPath}
+            className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2.5 rounded-xl border border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:border-black hover:text-gray-900 transition-colors shadow-sm"
+          >
+            {otherRole === 'fullstack' ? <Code2 size={15} /> : <Briefcase size={15} />}
+            {roles[otherRole]}
+          </Link>
+
+          <div className="flex items-center gap-2">
+            {['ua', 'en', 'pl'].map((l) => (
+              <button
+                key={l}
+                type="button"
+                onClick={() => setLang(l)}
+                className={`min-w-[48px] px-4 py-2.5 rounded-xl border text-sm font-semibold transition-all duration-150 ${
+                  lang === l
+                    ? 'bg-black text-white border-black shadow-sm'
+                    : 'bg-white text-black border-gray-300 hover:border-black'
+                }`}
+              >
+                {l.toUpperCase()}
+              </button>
+            ))}
+          </div>
         </div>
+
         <button
           type="button"
           onClick={handleOpenPdf}
@@ -897,7 +945,7 @@ const Resume = () => {
               <img
                 src="/photo.jpg"
                 alt={t.name}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover object-[center_18%]"
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
                 }}
@@ -906,8 +954,8 @@ const Resume = () => {
 
             <div className="flex-grow min-w-0 pt-0 sm:pt-1">
               <div className="inline-flex items-center gap-1.5 text-[11px] sm:text-xs font-semibold uppercase tracking-[0.14em] text-gray-500 mb-2">
-                <User size={13} />
-                CV
+                {activeRole === 'fullstack' ? <Code2 size={13} /> : <User size={13} />}
+                {activeRole === 'fullstack' ? 'Fullstack CV' : 'Product CV'}
               </div>
               <h1 className="resume-name text-[1.6rem] sm:text-4xl font-bold text-gray-900 mb-1 tracking-tight leading-tight">
                 {t.name}
