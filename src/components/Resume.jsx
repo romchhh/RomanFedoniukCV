@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate, useParams } from 'react-router-dom';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import {
@@ -27,6 +27,8 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import { fullstackContent } from '../content/fullstack';
+
+const SUPPORTED_LANGS = ['ua', 'en', 'pl'];
 
 const SectionTitle = ({ icon: Icon, children }) => (
   <h3 className="flex items-center gap-2.5 text-xs sm:text-[13px] font-semibold uppercase tracking-[0.14em] text-gray-500 mb-5 sm:mb-6 pb-3 border-b border-gray-100">
@@ -729,35 +731,23 @@ const waitForImages = (root) =>
     )
   );
 
-const roleMeta = {
-  ua: {
-    pm: 'Product / PM',
-    fullstack: 'Fullstack',
-  },
-  en: {
-    pm: 'Product / PM',
-    fullstack: 'Fullstack',
-  },
-  pl: {
-    pm: 'Product / PM',
-    fullstack: 'Fullstack',
-  },
-};
-
 const contentByRole = {
   pm: pmContent,
   fullstack: fullstackContent,
 };
 
 const Resume = ({ role = 'pm' }) => {
-  const [lang, setLang] = useState('ua');
+  const { lang: langParam } = useParams();
+  const lang = SUPPORTED_LANGS.includes(langParam) ? langParam : null;
   const [pdfLoading, setPdfLoading] = useState(false);
   const resumeRef = useRef(null);
   const activeRole = role === 'fullstack' ? 'fullstack' : 'pm';
+
+  if (!lang) {
+    return <Navigate to={`/${activeRole}/ua`} replace />;
+  }
+
   const t = contentByRole[activeRole][lang];
-  const roles = roleMeta[lang];
-  const otherRole = activeRole === 'pm' ? 'fullstack' : 'pm';
-  const otherPath = otherRole === 'pm' ? '/pm' : '/fullstack';
 
   const handleOpenPdf = async () => {
     if (!resumeRef.current || pdfLoading) {
@@ -895,28 +885,19 @@ const Resume = ({ role = 'pm' }) => {
             Home
           </Link>
 
-          <Link
-            to={otherPath}
-            className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2.5 rounded-xl border border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:border-black hover:text-gray-900 transition-colors shadow-sm"
-          >
-            {otherRole === 'fullstack' ? <Code2 size={15} /> : <Briefcase size={15} />}
-            {roles[otherRole]}
-          </Link>
-
           <div className="flex items-center gap-2">
-            {['ua', 'en', 'pl'].map((l) => (
-              <button
+            {SUPPORTED_LANGS.map((l) => (
+              <Link
                 key={l}
-                type="button"
-                onClick={() => setLang(l)}
-                className={`min-w-[48px] px-4 py-2.5 rounded-xl border text-sm font-semibold transition-all duration-150 ${
+                to={`/${activeRole}/${l}`}
+                className={`min-w-[48px] px-4 py-2.5 rounded-xl border text-sm font-semibold transition-all duration-150 text-center ${
                   lang === l
                     ? 'bg-black text-white border-black shadow-sm'
                     : 'bg-white text-black border-gray-300 hover:border-black'
                 }`}
               >
                 {l.toUpperCase()}
-              </button>
+              </Link>
             ))}
           </div>
         </div>

@@ -1,16 +1,22 @@
 import { Link } from 'react-router-dom';
-import { Briefcase, Code2, ArrowRight } from 'lucide-react';
+import { Briefcase, Code2 } from 'lucide-react';
+
+const langs = [
+  { code: 'ua', label: 'UA' },
+  { code: 'en', label: 'EN' },
+  { code: 'pl', label: 'PL' },
+];
 
 const cards = [
   {
-    to: '/pm',
+    role: 'pm',
     icon: Briefcase,
     title: 'Product / Project Manager',
     desc: 'CV для ролі Product / Project Manager: досвід, discovery, delivery, кейси та soft skills.',
     badge: 'PM',
   },
   {
-    to: '/fullstack',
+    role: 'fullstack',
     icon: Code2,
     title: 'Fullstack Developer',
     desc: 'CV для fullstack-розробника: стек, інтеграції, боти, вебпродукти та technical кейси.',
@@ -34,7 +40,7 @@ const Home = () => {
             Роман Федонюк
           </h1>
           <p className="text-base sm:text-lg text-gray-500 max-w-xl mx-auto">
-            Обери версію CV — Product Manager або Fullstack Developer
+            Обери версію CV та мову
           </p>
         </div>
 
@@ -42,10 +48,9 @@ const Home = () => {
           {cards.map((card) => {
             const Icon = card.icon;
             return (
-              <Link
-                key={card.to}
-                to={card.to}
-                className="group rounded-2xl border border-gray-200 bg-white p-6 sm:p-7 shadow-[0_10px_40px_rgba(15,23,42,0.06)] hover:border-gray-900 hover:shadow-[0_14px_44px_rgba(15,23,42,0.1)] transition-all"
+              <div
+                key={card.role}
+                className="rounded-2xl border border-gray-200 bg-white p-6 sm:p-7 shadow-[0_10px_40px_rgba(15,23,42,0.06)]"
               >
                 <div className="flex items-start justify-between gap-3 mb-5">
                   <span className="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-gray-900 text-white">
@@ -61,14 +66,18 @@ const Home = () => {
                 <p className="text-sm leading-relaxed text-gray-500 mb-5">
                   {card.desc}
                 </p>
-                <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-900">
-                  Відкрити CV
-                  <ArrowRight
-                    size={16}
-                    className="transition-transform group-hover:translate-x-0.5"
-                  />
-                </span>
-              </Link>
+                <div className="flex flex-wrap gap-2">
+                  {langs.map((lang) => (
+                    <Link
+                      key={lang.code}
+                      to={`/${card.role}/${lang.code}`}
+                      className="inline-flex min-w-[56px] items-center justify-center px-4 py-2.5 rounded-xl bg-black text-white text-sm font-semibold hover:bg-gray-800 transition-colors"
+                    >
+                      {lang.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
             );
           })}
         </div>

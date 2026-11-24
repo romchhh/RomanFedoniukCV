@@ -8,8 +8,10 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/pm" element={<Resume role="pm" />} />
-          <Route path="/fullstack" element={<Resume role="fullstack" />} />
+          <Route path="/pm" element={<Navigate to="/pm/ua" replace />} />
+          <Route path="/fullstack" element={<Navigate to="/fullstack/ua" replace />} />
+          <Route path="/pm/:lang" element={<Resume role="pm" />} />
+          <Route path="/fullstack/:lang" element={<Resume role="fullstack" />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
